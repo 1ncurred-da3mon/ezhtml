@@ -1,15 +1,34 @@
-import os
-import re
+'''
+	EZHTML by diablo.
+
+	EZHTML is an easy to use python module to code HTML without actually coding any HTML.
+	For practical uses.... can't really think of any actual real world uses, unless you needed
+	help understanding how HTML works I guess.
+'''
+
+import sys
 
 class TEXT_ORDER:
+	'''
+		Used for declaring whether the HTML element will require the innerText
+		to be before any other child HTML elements, or after the children.
+	'''
 	FIRST = True
 	LAST  = False
 
 
 class Element:
-	def __init__(self, type_: str, attr=dict(), text=str()):
-		self.Type = type_
-		self.Attributes = attr
+	'''
+		An HTML element. Can be any type of HTML element. From "html" to "body", from "div" to "img".
+	'''
+	def __init__(self, tag_: str, attr=dict(), text=str()):
+		'''
+			tag_ : the HTML tag for the element
+			attr : a dictionary containing any attributes required for the element (can be added later)
+			text : the innerText for the HTML element
+		'''
+		self.tag = tag_
+		self.__Attributes = attr
 		self.__sauce = { 'children': [], 'text-order': (True, text)}
 
 	def appendChild(self, child):
@@ -23,14 +42,14 @@ class Element:
 
 	@property
 	def head(self):
-		r = f'<{self.Type}'
-		for attr in self.Attributes:
-			r += ' ' + attr[0] + '="' + attr[1]
+		r = f'<{self.tag}'
+		for attr in self.__Attributes.items():
+			r += ' ' + attr[0] + '="' + attr[1] + '"'
 		return r + '>'
 
 	@property
 	def foot(self):
-		return f'</{self.Type}>'
+		return f'</{self.tag}>'
 
 	@property
 	def children(self):
@@ -52,26 +71,50 @@ class Element:
 	def text_order(self, val: bool):
 		self.__sauce['text-order'] = (val, self.__sauce['text-order'][1])
 
-	def __str__(self):
-		html_code = f'<{self.Type}'
-		for attr in self.Attributes.items():
-			html_code += f' {attr[0]}="{attr[1]}"'
-		html_code += '>'
-		# inner text is before any of the elements ahead
-		if self.__sauce['text-order'][0]:
-			html_code += self.__sauce['text-order'][1]
-		for child in self.__sauce['children']:
-			html_code += f'\n\t{child.__str__()}'
-		if not self.__sauce['text-order'][0]:
-			html_code += self.__sauce['text-order'][1]
-		if len(self.__sauce['children']) >= 1:
-			html_code += f'\n</{self.Type}>'
+	@property
+	def attributes(self):
+		return self.__Attributes
+
+	@attributes.setter
+	def attributes(self, val):
+		if type(val) != dict:
+			print("Cannot set attributes to a non-dict object")
+			sys.exit(1)
 		else:
-			html_code += f'</{self.Type}>'
-		return html_code
+			self.__Attributes = val
+	
+	def add_attr(self, attr: str, val: str)->None:
+		self.__Attributes[attr]=val
+	
+	def rem_attr(self, attr: str)-> bool:
+		try:
+			del self.__Attributes[attr]
+			return True
+		except KeyError:
+			return False
+
+	def __str__(self):
+		
+		return prettify(self)
+		# html_code = f'<{self.tag}'
+		# for attr in self.__Attributes.items():
+		# 	html_code += f' {attr[0]}="{attr[1]}"'
+		# html_code += '>'
+		# # inner text is before any of the elements ahead
+		# if self.__sauce['text-order'][0]:
+		# 	html_code += self.__sauce['text-order'][1]
+		# for child in self.__sauce['children']:
+		# 	html_code += f'\n\t{child.__str__()}'
+		# if not self.__sauce['text-order'][0]:
+		# 	html_code += self.__sauce['text-order'][1]
+		# if len(self.__sauce['children']) >= 1:
+		# 	html_code += f'\n</{self.tag}>'
+		# else:
+		# 	html_code += f'</{self.tag}>'
+		# return html_code
 
 	def __repr__(self):
-		return f'element: {self.Type}; {self.childrenCount()} child(ren)'	
+		return f'element: {self.tag}; {self.childrenCount()} child(ren)'	
 
 def _r_html_blocks_to_str(child: dict)-> str:
 	ret = str()
@@ -98,7 +141,7 @@ def _r_html_blocks_to_str(child: dict)-> str:
 
 def _r_html_child_tabs_text(element: Element, ctr: int)-> dict:
 	# get the formatted information for each html element and child
-	ret = { 'tag': element.Type, 'head': element.head, 'tabsize': ctr, 'children': [], 'text': element.text, 'textorder': TEXT_ORDER.LAST }
+	ret = { 'tag': element.tag, 'head': element.head, 'tabsize': ctr, 'children': [], 'text': element.text, 'textorder': TEXT_ORDER.LAST }
 	if element.childrenCount() >= 1:
 		for child in element.children:
 			ret['children'].append(_r_html_child_tabs_text(child, ctr + 1))
